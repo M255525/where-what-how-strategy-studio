@@ -1,6 +1,6 @@
 {
-  "name": "Where-What-How 商業策略工作室",
-  "short_name": "WWH策略工作室",
+  "name": "商業策略工作室",
+  "short_name": "商業策略工作室",
   "description": "輸入一個商業議題，用 Where/What/How 三構面拆解，每構面內嵌六頂思考帽六角度交叉檢視",
   "start_url": "./index.html",
   "scope": "./",

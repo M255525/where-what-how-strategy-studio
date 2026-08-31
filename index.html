@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Where-What-How 商業策略工作室 · 戰場・致勝模式・落地方式</title>
+<title>商業策略工作室 · 戰場・致勝模式・落地方式</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#9caf3d">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
@@ -201,7 +201,7 @@
 <div id="marqueeBar"><div id="marqueeTrack"></div></div>
 
 <div class="topbar">
-  <div class="brand"><span class="dot"></span><strong>Where-What-How 商業策略工作室</strong></div>
+  <div class="brand"><span class="dot"></span><strong>商業策略工作室</strong></div>
   <div style="display:flex;align-items:center;gap:10px;">
     <nav><a href="manual.html">操作手冊</a></nav>
   </div>
@@ -330,7 +330,7 @@
   </div>
   <div class="creator-box">製作：<strong>Mark Tsai（蔡豐全）</strong>｜<a href="mailto:tsaimark@gmail.com">tsaimark@gmail.com</a>｜完整經歷見<a href="manual.html">操作手冊</a></div>
   <div class="footer-meta">
-    <span>© 2026 Where-What-How 商業策略工作室</span>
+    <span>© 2026 商業策略工作室</span>
     <img src="https://visitor-badge.laobi.icu/badge?page_id=m255525.where-what-how-strategy-studio" alt="訪客次數" style="vertical-align:middle;height:20px;">
     <button type="button" id="installBtn" class="footer-link-btn">📲 加入主畫面</button>
     <a href="manual.html">操作手冊 →</a>
@@ -823,7 +823,7 @@
     setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
   }
   function buildTextReport() {
-    var lines = ['Where-What-How 商業策略分析報告', '議題：' + state.issueName, '產業／情境：' + (state.industry || '－'), '產出時間：' + new Date().toLocaleString('zh-TW'), ''];
+    var lines = ['商業策略分析報告', '議題：' + state.issueName, '產業／情境：' + (state.industry || '－'), '產出時間：' + new Date().toLocaleString('zh-TW'), ''];
     ['where', 'what', 'how'].forEach(function (facetKey) {
       var r = state.results[facetKey];
       lines.push('【' + D.FACET_LABELS[facetKey] + '】');
@@ -838,7 +838,7 @@
     return lines.join('\n');
   }
   function buildPrintReport() {
-    var html = '<h1>Where-What-How 商業策略分析報告</h1>' +
+    var html = '<h1>商業策略分析報告</h1>' +
       '<div class="pr-meta">議題：' + escapeHtml(state.issueName) + '｜產業／情境：' + escapeHtml(state.industry || '－') + '｜產出時間：' + new Date().toLocaleString('zh-TW') + '</div>';
     ['where', 'what', 'how'].forEach(function (facetKey) {
       var r = state.results[facetKey];
