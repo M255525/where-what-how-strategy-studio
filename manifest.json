@@ -1,0 +1,16 @@
+{
+  "name": "Where-What-How 商業策略工作室",
+  "short_name": "WWH策略工作室",
+  "description": "輸入一個商業議題，用 Where/What/How 三構面拆解，每構面內嵌六頂思考帽六角度交叉檢視",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#12140d",
+  "theme_color": "#9caf3d",
+  "lang": "zh-TW",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
