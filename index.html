@@ -288,6 +288,7 @@
   <section class="panel" id="formPanel">
     <div class="panel-head">
       <div class="panel-title"><span class="badge">1</span>商業議題基本資料</div>
+      <button type="button" class="btn small ghost" id="btnClearAll" title="清空所有欄位與已產生的分析，方便輸入新專案">🗑️ 清空重來</button>
     </div>
     <p class="panel-hint">填好以下欄位，Where／What／How 三個構面的分析都會依這組資料產生。也可以直接點下面的快速範例。</p>
     <div class="field-grid">
@@ -637,6 +638,23 @@
     persistState();
     renderFacet('where'); renderFacet('what'); renderFacet('how'); renderIntegration();
   }
+  var SHARED_FIELD_IDS = ['issueName', 'industry', 'background', 'goal'];
+  var SUPPLEMENT_FIELD_IDS = ['whereCandidates', 'whereConstraint', 'whatAdvantage', 'whatDifferentiation', 'howTimeline', 'howResource'];
+  function resetAll() {
+    if (!confirm('確定要清空目前所有欄位與已產生的分析嗎？此動作無法復原，方便輸入新專案。')) return;
+    state = {
+      issueName: '', industry: '', background: '', goal: '',
+      whereCandidates: '', whereConstraint: '', whatAdvantage: '', whatDifferentiation: '', howTimeline: '', howResource: '',
+      results: { where: null, what: null, how: null, integration: null }
+    };
+    SHARED_FIELD_IDS.concat(SUPPLEMENT_FIELD_IDS).forEach(function (id) { $(id).value = ''; });
+    persistState();
+    renderFacet('where'); renderFacet('what'); renderFacet('how'); renderIntegration();
+    document.querySelectorAll('.tab-btn').forEach(function (b) { b.classList.toggle('active', b.dataset.tab === 'where'); });
+    document.querySelectorAll('.tab-panel').forEach(function (p) { p.classList.toggle('active', p.id === 'panelWhere'); });
+    showToast('已清空，可以開始輸入新專案');
+  }
+
   function initPresets() {
     var row = $('presetRow');
     row.innerHTML = D.PRESETS.map(function (p, i) {
@@ -983,6 +1001,7 @@
     $('btnGenWhat').addEventListener('click', function () { doGenFacet('what'); });
     $('btnGenHow').addEventListener('click', function () { doGenFacet('how'); });
     $('btnGenIntegration').addEventListener('click', doGenIntegration);
+    $('btnClearAll').addEventListener('click', resetAll);
 
     $('exportTxtBtn').addEventListener('click', function () {
       if (!state.issueName) { showToast('請先填寫商業議題名稱'); return; }
