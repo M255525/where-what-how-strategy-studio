@@ -169,6 +169,19 @@
   .example-btn{font-family:var(--font-sans);font-size:12.5px;background:var(--bg-alt);color:var(--text-dim);border:1px solid var(--line);padding:6px 12px;border-radius:20px;cursor:pointer;transition:.15s;}
   .example-btn:hover{border-color:var(--accent);color:var(--accent);}
 
+  .saved-issues{margin-top:18px;padding-top:16px;border-top:1px solid var(--line-soft);}
+  .saved-issues h3{font-size:14px;margin:0 0 10px;color:var(--text);}
+  .save-row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;}
+  .save-row input{flex:1;min-width:160px;}
+  .saved-list{list-style:none;padding:0;margin:0;display:grid;gap:8px;}
+  .saved-empty{color:var(--text-faint);font-size:13px;}
+  .saved-item{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;background:var(--panel-raised);border:1px solid var(--line);border-radius:8px;padding:8px 12px;}
+  .saved-info{display:flex;flex-direction:column;gap:2px;}
+  .saved-name{font-size:13.5px;font-weight:700;color:var(--text);}
+  .saved-date{font-size:11.5px;color:var(--text-faint);}
+  .saved-actions{display:flex;flex-wrap:wrap;gap:6px;}
+  .saved-actions .btn{padding:5px 10px;font-size:12px;}
+
   .api-settings{margin-top:2px;}
   .api-settings summary{cursor:pointer;font-size:13px;font-weight:600;color:var(--text-dim);padding:4px 0;}
   .api-settings summary:hover{color:var(--accent);}
@@ -298,6 +311,19 @@
       <div class="field full"><label for="goal">期望目標</label><input type="text" id="goal" maxlength="120" placeholder="例如：評估是否該投入資源開發長照機構專用版本"></div>
     </div>
     <div class="example-row" id="presetRow"></div>
+
+    <div class="saved-issues">
+      <h3>已儲存的議題</h3>
+      <div class="save-row">
+        <input type="text" id="saveIssueName" placeholder="輸入名稱（留白會用商業議題名稱）">
+        <button type="button" class="btn small" id="saveIssueBtn">💾 儲存目前議題</button>
+        <button type="button" class="btn small ghost" id="exportJsonBtn">📤 匯出檔案（.json）</button>
+        <button type="button" class="btn small ghost" id="importJsonBtn">📂 匯入檔案</button>
+        <input type="file" id="importJsonInput" accept="application/json,.json" style="display:none;">
+      </div>
+      <ul class="saved-list" id="savedIssueList"></ul>
+      <p class="panel-hint" style="margin-top:8px;">「儲存目前議題」存在這台瀏覽器裡，可存多筆、隨時切換載入；「匯出檔案」會把目前議題整包存成 .json，可用「匯入檔案」在別台電腦或分享給別人重新載入。</p>
+    </div>
   </section>
 
   <section class="panel ai-panel">
@@ -658,6 +684,170 @@
     showToast('已清空，可以開始輸入新專案');
   }
 
+  /* ---------- 已儲存的議題（多筆具名清單）／匯出匯入檔案 ---------- */
+  function clone(obj) { return JSON.parse(JSON.stringify(obj)); }
+  function normalizeIssueData(raw) {
+    var base = {
+      issueName: '', industry: '', background: '', goal: '',
+      whereCandidates: '', whereConstraint: '', whatAdvantage: '', whatDifferentiation: '', howTimeline: '', howResource: '',
+      results: { where: null, what: null, how: null, integration: null }
+    };
+    if (raw && typeof raw === 'object') {
+      SHARED_FIELD_IDS.concat(SUPPLEMENT_FIELD_IDS).forEach(function (id) {
+        if (typeof raw[id] === 'string') base[id] = raw[id];
+      });
+      if (raw.results && typeof raw.results === 'object') {
+        ['where', 'what', 'how', 'integration'].forEach(function (k) {
+          if (raw.results[k]) base.results[k] = raw.results[k];
+        });
+      }
+    }
+    return base;
+  }
+  function applyIssueData(data) {
+    state = normalizeIssueData(data);
+    SHARED_FIELD_IDS.concat(SUPPLEMENT_FIELD_IDS).forEach(function (id) { $(id).value = state[id]; });
+    persistState();
+    renderFacet('where'); renderFacet('what'); renderFacet('how'); renderIntegration();
+  }
+
+  var SAVED_KEY = 'wwhSavedIssues';
+  function loadSavedIssues() {
+    try { return JSON.parse(localStorage.getItem(SAVED_KEY)) || []; } catch (e) { return []; }
+  }
+  function persistSavedIssues(list) {
+    try { localStorage.setItem(SAVED_KEY, JSON.stringify(list)); } catch (e) {}
+  }
+  function renderSavedIssueList() {
+    var list = loadSavedIssues();
+    var el = $('savedIssueList');
+    el.innerHTML = '';
+    if (!list.length) {
+      var empty = document.createElement('li');
+      empty.className = 'saved-empty';
+      empty.textContent = '還沒有儲存任何議題';
+      el.appendChild(empty);
+      return;
+    }
+    list.forEach(function (item) {
+      var li = document.createElement('li');
+      li.className = 'saved-item';
+      li.dataset.id = item.id;
+
+      var info = document.createElement('div');
+      info.className = 'saved-info';
+      var nameEl = document.createElement('span');
+      nameEl.className = 'saved-name';
+      nameEl.textContent = item.name;
+      var dateEl = document.createElement('span');
+      dateEl.className = 'saved-date';
+      dateEl.textContent = item.savedAt;
+      info.appendChild(nameEl);
+      info.appendChild(dateEl);
+
+      var actions = document.createElement('div');
+      actions.className = 'saved-actions';
+      [['load', '載入'], ['rename', '重新命名'], ['delete', '刪除']].forEach(function (pair) {
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'btn small';
+        btn.dataset.action = pair[0];
+        btn.textContent = pair[1];
+        actions.appendChild(btn);
+      });
+
+      li.appendChild(info);
+      li.appendChild(actions);
+      el.appendChild(li);
+    });
+  }
+  function onSaveIssueClick() {
+    readSharedInputs();
+    var name = $('saveIssueName').value.trim() || state.issueName;
+    if (!name) { showToast('請先填寫商業議題名稱或自訂儲存名稱'); return; }
+    var list = loadSavedIssues();
+    var existingIdx = list.findIndex(function (x) { return x.name === name; });
+    if (existingIdx >= 0 && !confirm('已有同名紀錄「' + name + '」，要覆蓋嗎？')) return;
+    var item = {
+      id: existingIdx >= 0 ? list[existingIdx].id : String(Date.now()),
+      name: name,
+      savedAt: new Date().toLocaleString('zh-TW', { hour12: false }),
+      data: clone(state)
+    };
+    if (existingIdx >= 0) list[existingIdx] = item; else list.push(item);
+    persistSavedIssues(list);
+    renderSavedIssueList();
+    $('saveIssueName').value = '';
+    showToast('已儲存「' + name + '」');
+  }
+  function initSavedIssues() {
+    renderSavedIssueList();
+    $('saveIssueBtn').addEventListener('click', onSaveIssueClick);
+    $('savedIssueList').addEventListener('click', function (e) {
+      var btn = e.target.closest('button[data-action]');
+      if (!btn) return;
+      var li = e.target.closest('.saved-item');
+      if (!li) return;
+      var list = loadSavedIssues();
+      var idx = list.findIndex(function (x) { return x.id === li.dataset.id; });
+      if (idx < 0) return;
+      var item = list[idx];
+      var action = btn.dataset.action;
+
+      if (action === 'load') {
+        if (!confirm('載入「' + item.name + '」會覆蓋目前表單與畫面內容，確定嗎？')) return;
+        applyIssueData(clone(item.data));
+        document.querySelectorAll('.tab-btn').forEach(function (b) { b.classList.toggle('active', b.dataset.tab === 'where'); });
+        document.querySelectorAll('.tab-panel').forEach(function (p) { p.classList.toggle('active', p.id === 'panelWhere'); });
+        showToast('已載入「' + item.name + '」');
+      } else if (action === 'rename') {
+        var newName = prompt('輸入新名稱：', item.name);
+        if (!newName || !newName.trim()) return;
+        newName = newName.trim();
+        if (list.some(function (x, i) { return i !== idx && x.name === newName; })) { showToast('已有同名紀錄，請換一個名稱'); return; }
+        item.name = newName;
+        persistSavedIssues(list);
+        renderSavedIssueList();
+      } else if (action === 'delete') {
+        if (!confirm('確定要刪除「' + item.name + '」嗎？此動作無法復原。')) return;
+        list.splice(idx, 1);
+        persistSavedIssues(list);
+        renderSavedIssueList();
+        showToast('已刪除「' + item.name + '」');
+      }
+    });
+
+    $('exportJsonBtn').addEventListener('click', function () {
+      readSharedInputs();
+      if (!state.issueName) { showToast('請先填寫商業議題名稱'); return; }
+      var blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json;charset=utf-8' });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url; a.download = sanitizeFilename(state.issueName) + '-WWH議題.json';
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast('已匯出檔案');
+    });
+    $('importJsonBtn').addEventListener('click', function () { $('importJsonInput').click(); });
+    $('importJsonInput').addEventListener('change', function () {
+      var file = this.files && this.files[0];
+      this.value = '';
+      if (!file) return;
+      var reader = new FileReader();
+      reader.onload = function () {
+        try {
+          var raw = JSON.parse(reader.result);
+          applyIssueData(raw);
+          document.querySelectorAll('.tab-btn').forEach(function (b) { b.classList.toggle('active', b.dataset.tab === 'where'); });
+          document.querySelectorAll('.tab-panel').forEach(function (p) { p.classList.toggle('active', p.id === 'panelWhere'); });
+          showToast('已匯入「' + file.name + '」');
+        } catch (e) { showToast('檔案格式錯誤，無法匯入'); }
+      };
+      reader.onerror = function () { showToast('讀取檔案失敗'); };
+      reader.readAsText(file);
+    });
+  }
+
   function initPresets() {
     var row = $('presetRow');
     row.innerHTML = D.PRESETS.map(function (p, i) {
@@ -995,6 +1185,7 @@
     $('whatAdvantage').value = state.whatAdvantage; $('whatDifferentiation').value = state.whatDifferentiation;
     $('howTimeline').value = state.howTimeline; $('howResource').value = state.howResource;
     initPresets();
+    initSavedIssues();
     bindSharedInputEvents();
     initAiPanel();
     initTabs();

@@ -12,7 +12,16 @@
 
 ### localStorage
 
-`wwhState`（`{issueName,industry,background,goal,whereCandidates,whereConstraint,whatAdvantage,whatDifferentiation,howTimeline,howResource,results:{where,what,how,integration}}`，切換分頁不遺失其他分頁已產生的內容）、`wwhApiConfig`（`{provider,model,apiKey}`）、`wwhMarquee`（跑馬燈快取）。**不使用**序號授權相關的 key。
+`wwhState`（`{issueName,industry,background,goal,whereCandidates,whereConstraint,whatAdvantage,whatDifferentiation,howTimeline,howResource,results:{where,what,how,integration}}`，切換分頁不遺失其他分頁已產生的內容；單一份自動存檔，填新議題會直接覆蓋）、`wwhApiConfig`（`{provider,model,apiKey}`）、`wwhMarquee`（跑馬燈快取）、`wwhSavedIssues`（2026-09-15 新增，多筆具名儲存清單，見下方「已儲存的議題」）。**不使用**序號授權相關的 key。
+
+### 已儲存的議題／匯出匯入檔案（2026-09-15 新增）
+
+比照 `coffee-ig-planner` 的「已儲存的計畫」模式（多筆具名清單）＋ `scamper-thinking-generator` 的「儲存為檔案／開啟檔案」模式（跨電腦備份），兩者互補、與 `wwhState` 單一份自動存檔是三套獨立機制：
+
+- **已儲存的議題**（`#savedIssueList`，`initSavedIssues()`）：多筆具名清單存 `wwhSavedIssues`（`{id,name,savedAt,data}[]`，`data` 為完整 `state` 複本，含 `results`）。按「💾 儲存目前議題」存一筆（同名詢問覆蓋）；清單用單一事件委派（`data-action="load|rename|delete"`）處理，DOM 一律用 `createElement`/`textContent` 組出，不用 `innerHTML` 拼接使用者輸入。**沒有「下載」動作**（跟 coffee-ig-planner 不同，因為本專案已有獨立的 `.json` 匯出功能，不需要重複）。
+- **匯出/匯入檔案**（`#exportJsonBtn`/`#importJsonBtn`+`#importJsonInput`）：把整個 `state` 存成 `.json`（`sanitizeFilename(issueName)+'-WWH議題.json'`）／讀回後用 `normalizeIssueData()` 正規化欄位補齊，避免格式不符的檔案讓畫面壞掉。
+- 共用函式 `applyIssueData(data)`：正規化＋寫回表單欄位＋`persistState()`＋重繪三構面與整合建議，是「載入已儲存議題」與「匯入檔案」共用的入口，也會把分頁切回 Where。
+- 已用 Playwright 端對端驗證：儲存/載入/重新命名/刪除、真實檔案匯入（`browser_file_upload`）皆正常；匯出因觸發瀏覽器下載對話框行為，改用相同 `JSON.stringify` 程式碼路徑驗證輸出格式正確（同一套下載程式碼已在 `scamper-thinking-generator` 驗證過）。
 
 ## 與姊妹專案的差異
 
